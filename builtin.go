@@ -15,7 +15,7 @@ func (s *Starter) cmdServe(cmd *cobra.Command, args []string) error {
 	signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
 
 	for {
-		sig, err := s.tryRun(cmd, signals)
+		sig, err := s.run(cmd, signals)
 		if err != nil {
 			return err
 		}
@@ -46,7 +46,7 @@ func (s *Starter) cmdStart(cmd *cobra.Command, args []string) error {
 	signal.Notify(signals, syscall.SIGHUP, syscall.SIGTERM)
 
 	for {
-		sig, err := s.tryRun(cmd, signals)
+		sig, err := s.run(cmd, signals)
 		if err != nil {
 			return err
 		}

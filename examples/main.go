@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	s := starter.NewStarter(
+	s := starter.New(
 		"starter",
 		func(conf interface{}) *fx.App {
 			return fx.New(
@@ -32,6 +32,7 @@ func main() {
 			}
 			return conf, nil
 		},
+		starter.WithConfigSearch("conf", "$HOME", "."),
 	)
 
 	root := &cobra.Command{Use: "starter"}
