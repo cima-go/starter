@@ -1,7 +1,9 @@
 package starter
 
 import (
-	"log"
+	"context"
+	"errors"
+	"fmt"
 	"os"
 	"syscall"
 
@@ -10,78 +12,97 @@ import (
 	"go.uber.org/fx"
 )
 
+// App is builder for create fxApp instance
 type App func(conf interface{}) *fx.App
 
+// Conf is config decoder for provide actual type
 type Conf func(vip *viper.Viper) (interface{}, error)
 
 type Starter struct {
-	app    App
-	conf   Conf
-	config interface{}
+	name string
+	app  App
+	conf Conf
+
+	flags     Flags
+	confName  string
+	confValue interface{}
 }
 
-func NewStarter(app App, conf Conf) *Starter {
+func NewStarter(name string, app App, conf Conf, opts ...Option) *Starter {
 	s := &Starter{
+		name: name,
 		app:  app,
 		conf: conf,
 	}
+
+	if len(opts) > 0 {
+		s.SetOptions(opts...)
+	}
+
 	return s
 }
 
-func (s *Starter) initC(cmd *cobra.Command, signals chan<- os.Signal) {
-	var watcher func()
-	if cmd.Flag("watch").Value.String() == "true" {
-		watcher = func() {
+func (s *Starter) AppName() string {
+	return s.name
+}
+
+func (s *Starter) SetOptions(opts ...Option) {
+	for _, opt := range opts {
+		opt(s)
+	}
+}
+
+func (s *Starter) getFlags() Flags {
+	if s.flags == nil || len(s.flags.Flags()) == 0 {
+		s.flags = NewDefaultFlags()
+	}
+	return s.flags
+}
+
+func (s *Starter) initC(confFile string, watchConf bool, signals chan<- os.Signal) error {
+	var notify func(c interface{})
+	if watchConf {
+		notify = func(conf interface{}) {
+			s.confValue = conf
 			signals <- syscall.SIGHUP
 		}
 	}
 
-	if conf2, err := s.configure(cmd.Flag("config").Value.String(), watcher); err != nil {
-		log.Fatal(err)
-	} else {
-		s.config = conf2
-	}
+	var err error
+	s.confValue, err = s.configure(confFile, notify)
+
+	return err
 }
 
-func (s *Starter) StdCmds() []*cobra.Command {
-	serve := &cobra.Command{
-		Use:   "serve",
-		Short: "run server in frontend",
-		RunE:  s.cmdServe,
-	}
-	start := &cobra.Command{
-		Use:   "start",
-		Short: "run server as daemon",
-		RunE:  s.cmdStart,
-	}
-	stop := &cobra.Command{
-		Use:   "stop",
-		Short: "stop daemon server",
-		RunE:  s.cmdStop,
-	}
-	reload := &cobra.Command{
-		Use:   "reload",
-		Short: "reload daemon server",
-		RunE:  s.cmdReload,
+func (s *Starter) run(signal <-chan os.Signal) (os.Signal, error) {
+	app := s.app(s.confValue)
+
+	startCtx, cancel1 := context.WithTimeout(context.Background(), app.StartTimeout())
+	defer cancel1()
+
+	if err := app.Start(startCtx); err != nil {
+		return nil, errors.New(fmt.Sprintf("ERROR\t\tFailed to start: %v", err))
 	}
 
-	server := []*cobra.Command{serve, start}
-	daemon := []*cobra.Command{start, stop, reload}
+	done := <-signal
 
-	for _, cmd := range server {
-		cmd.PersistentFlags().StringP("config", "c", "", "config path")
-		cmd.PersistentFlags().BoolP("watch", "w", false, "live reload")
+	stopCtx, cancel2 := context.WithTimeout(context.Background(), app.StopTimeout())
+	defer cancel2()
+
+	if err := app.Stop(stopCtx); err != nil {
+		return nil, errors.New(fmt.Sprintf("ERROR\t\tFailed to stop cleanly: %v", err))
 	}
 
-	for _, cmd := range daemon {
-		cmd.PersistentFlags().String("pid", "", "pid file")
-		cmd.PersistentFlags().String("log", "", "log file")
+	return done, nil
+}
+
+func (s *Starter) tryRun(cmd *cobra.Command, signals chan os.Signal) (os.Signal, error) {
+	if s.confValue == nil {
+		flags := s.getFlags()
+		if err := s.initC(flags.Config(cmd), flags.Watch(cmd), signals); err != nil {
+			return nil, err
+		}
 	}
 
-	return []*cobra.Command{
-		serve,
-		start,
-		stop,
-		reload,
-	}
+	return s.run(signals)
 }

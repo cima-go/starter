@@ -1,6 +1,7 @@
 package starter
 
 import (
+	"errors"
 	"log"
 
 	"github.com/fsnotify/fsnotify"
@@ -8,26 +9,27 @@ import (
 	"github.com/spf13/viper"
 )
 
+var ErrConfigNotProvided = errors.New("config not provided")
+
 type ConfigInit interface {
 	Prepare() error
 }
 
-func (s *Starter) configure(confFile string, watchConf func()) (interface{}, error) {
+func (s *Starter) configure(confFile string, watchConf func(c interface{})) (interface{}, error) {
 	vip := viper.New()
 
 	if confFile != "" {
 		vip.SetConfigFile(confFile)
-		goto INIT
-	}
-
-	if home, err := homedir.Dir(); err != nil {
-		return nil, err
+	} else if s.confName != "" {
+		if home, err := homedir.Dir(); err != nil {
+			return nil, err
+		} else {
+			vip.AddConfigPath(home)
+			vip.SetConfigName(s.confName)
+		}
 	} else {
-		vip.AddConfigPath(home)
-		vip.SetConfigName("config.yaml")
+		return nil, ErrConfigNotProvided
 	}
-
-INIT:
 
 	vip.AutomaticEnv()
 
@@ -52,10 +54,9 @@ INIT:
 
 	if watchConf != nil {
 		vip.WatchConfig()
-		vip.OnConfigChange(func(e fsnotify.Event) {
-			if cfg, err := decoder(); err == nil {
-				s.config = cfg
-				watchConf()
+		vip.OnConfigChange(func(_ fsnotify.Event) {
+			if conf, err := decoder(); err == nil {
+				watchConf(conf)
 			} else {
 				log.Printf("error while decoding conf %v\n", err)
 			}

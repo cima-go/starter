@@ -14,10 +14,8 @@ func (s *Starter) cmdServe(cmd *cobra.Command, args []string) error {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
 
-	s.initC(cmd, signals)
-
 	for {
-		sig, err := s.run(signals)
+		sig, err := s.tryRun(cmd, signals)
 		if err != nil {
 			return err
 		}
@@ -29,8 +27,9 @@ func (s *Starter) cmdServe(cmd *cobra.Command, args []string) error {
 }
 
 func (s *Starter) cmdStart(cmd *cobra.Command, args []string) error {
-	dmx := newDaemon(cmd.Flag("pid").Value.String(), cmd.Flag("log").Value.String())
+	flags := s.getFlags()
 
+	dmx := newDaemon(flags.Pid(cmd), flags.Log(cmd))
 	if pid := dmx.runs(); pid > 0 {
 		return errors.New(fmt.Sprintf("process is running, pid = %d", pid))
 	}
@@ -46,10 +45,8 @@ func (s *Starter) cmdStart(cmd *cobra.Command, args []string) error {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGHUP, syscall.SIGTERM)
 
-	s.initC(cmd, signals)
-
 	for {
-		sig, err := s.run(signals)
+		sig, err := s.tryRun(cmd, signals)
 		if err != nil {
 			return err
 		}
@@ -61,9 +58,9 @@ func (s *Starter) cmdStart(cmd *cobra.Command, args []string) error {
 }
 
 func (s *Starter) cmdStop(cmd *cobra.Command, args []string) error {
-	return newDaemon(cmd.Flag("pid").Value.String(), "").shutdown()
+	return newDaemon(s.getFlags().Pid(cmd), "").shutdown()
 }
 
 func (s *Starter) cmdReload(cmd *cobra.Command, args []string) error {
-	return newDaemon(cmd.Flag("pid").Value.String(), "").reload()
+	return newDaemon(s.getFlags().Pid(cmd), "").reload()
 }

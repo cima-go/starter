@@ -1,11 +1,11 @@
 package starter
 
 import (
+	"errors"
 	"log"
 	"os"
 	"syscall"
 
-	"github.com/pkg/errors"
 	"github.com/sevlyar/go-daemon"
 )
 
@@ -44,7 +44,7 @@ func (s *daemonWrap) start() (bool, error) {
 	if child, err := s.dmx.Reborn(); err != nil {
 		return false, err
 	} else if child != nil {
-		log.Printf("process started, pid = %d", child.Pid)
+		log.Printf("[starter] process started, pid = %d\n", child.Pid)
 		return true, nil
 	} else {
 		return false, nil
@@ -53,7 +53,7 @@ func (s *daemonWrap) start() (bool, error) {
 
 func (s *daemonWrap) free() {
 	if err := s.dmx.Release(); err != nil {
-		log.Printf("daemon release failed: %s", err.Error())
+		log.Printf("[starter] daemon release failed: %s\n", err.Error())
 	}
 }
 

@@ -11,30 +11,30 @@ import (
 )
 
 func main() {
-	s := starter.NewStarter(func(conf interface{}) *fx.App {
-		return fx.New(
-			fx.Provide(
-				func() *Config { return conf.(*Config) },
-			),
-			fx.Invoke(
-				echo,
-			),
-		)
-	}, func(vip *viper.Viper) (interface{}, error) {
-		cfg := &Config{}
-		if err := vip.Unmarshal(cfg); err != nil {
-			return nil, err
-		}
-		return cfg, nil
-	})
+	s := starter.NewStarter(
+		"starter",
+		func(conf interface{}) *fx.App {
+			return fx.New(
+				fx.Provide(
+					func() *Config { return conf.(*Config) },
+				),
+				fx.Invoke(
+					func(cfg *Config) {
+						log.Printf("cfg name = %s\n", cfg.Name)
+					},
+				),
+			)
+		},
+		func(vip *viper.Viper) (interface{}, error) {
+			conf := &Config{}
+			if err := vip.Unmarshal(conf); err != nil {
+				return nil, err
+			}
+			return conf, nil
+		},
+	)
 
-	root := &cobra.Command{Use: "test"}
-	root.AddCommand(s.StdCmds()...)
-	if err := root.Execute(); err != nil {
-		log.Fatal(err)
-	}
-}
-
-func echo(cfg *Config) {
-	log.Printf("cfg name = %s\n", cfg.Name)
+	root := &cobra.Command{Use: "starter"}
+	root.AddCommand(starter.StdCommands(s)...)
+	_ = root.Execute()
 }
