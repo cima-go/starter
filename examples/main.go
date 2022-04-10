@@ -10,6 +10,10 @@ import (
 	"github.com/cima-go/starter"
 )
 
+type Config struct {
+	Name string `yaml:"name"`
+}
+
 func main() {
 	s := starter.New(
 		"starter",
