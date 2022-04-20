@@ -28,14 +28,12 @@ func AddFlags(cmd *cobra.Command, flags []CmdFlag) {
 			} else {
 				cmd.PersistentFlags().String(flag.Name, val, flag.Usage)
 			}
-			break
 		case bool:
 			if flag.Short != "" {
 				cmd.PersistentFlags().BoolP(flag.Name, flag.Short, val, flag.Usage)
 			} else {
 				cmd.PersistentFlags().Bool(flag.Name, val, flag.Usage)
 			}
-			break
 		}
 	}
 }

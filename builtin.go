@@ -1,7 +1,6 @@
 package starter
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -34,7 +33,7 @@ func (s *Starter) cmdStart(cmd *cobra.Command, args []string) error {
 
 	dmx := newDaemon(flags.Pid(cmd), flags.Log(cmd))
 	if pid := dmx.runs(); pid > 0 {
-		return errors.New(fmt.Sprintf("process is running, pid = %d", pid))
+		return fmt.Errorf("process is running, pid = %d", pid)
 	}
 
 	if done, err := dmx.start(); err != nil {

@@ -2,7 +2,6 @@ package starter
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"syscall"
@@ -79,7 +78,7 @@ func (s *Starter) runApp(signal <-chan os.Signal) (os.Signal, error) {
 	defer cancel1()
 
 	if err := app.Start(startCtx); err != nil {
-		return nil, errors.New(fmt.Sprintf("ERROR\t\tFailed to start: %v", err))
+		return nil, fmt.Errorf("ERROR\t\tFailed to start: %v", err)
 	}
 
 	done := <-signal
@@ -88,7 +87,7 @@ func (s *Starter) runApp(signal <-chan os.Signal) (os.Signal, error) {
 	defer cancel2()
 
 	if err := app.Stop(stopCtx); err != nil {
-		return nil, errors.New(fmt.Sprintf("ERROR\t\tFailed to stop cleanly: %v", err))
+		return nil, fmt.Errorf("ERROR\t\tFailed to stop cleanly: %v", err)
 	}
 
 	return done, nil
