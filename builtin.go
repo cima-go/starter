@@ -74,9 +74,9 @@ func (s *Starter) cmdInstall(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("get executable folder: %s", err)
 	}
 
-	name := cmd.Flag("name").Value.String()
-	if name == "" {
-		name = s.name
+	name := s.name
+	if f := cmd.Flag("name"); f != nil {
+		name = cmd.Flag("name").Value.String()
 	}
 
 	prg := &program{}
@@ -110,9 +110,9 @@ func (s *Starter) cmdInstall(cmd *cobra.Command, args []string) error {
 }
 
 func (s *Starter) cmdUnInstall(cmd *cobra.Command, args []string) error {
-	name := cmd.Flag("name").Value.String()
-	if name == "" {
-		name = s.name
+	name := s.name
+	if f := cmd.Flag("name"); f != nil {
+		name = cmd.Flag("name").Value.String()
 	}
 
 	prg := &program{}

@@ -48,6 +48,5 @@ func StdCommands(s *Starter) []*cobra.Command {
 	for _, cmd := range mixed {
 		AddFlags(cmd, flags)
 	}
-
-	return append(mixed, ServiceCommands(s)...)
+	return mixed
 }
