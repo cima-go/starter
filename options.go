@@ -1,6 +1,7 @@
 package starter
 
 import (
+	"github.com/kardianos/osext"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 )
@@ -12,13 +13,20 @@ func WithConfigSearch(name string, dirs ...string) Option {
 		s.confInits = append(s.confInits, func(vip *viper.Viper) error {
 			vip.SetConfigName(name)
 			for _, dir := range dirs {
-				if dir == "$HOME" { // special dir
+				switch dir {
+				case "$EXE":
+					exe, err := osext.Executable()
+					if err != nil {
+						return err
+					}
+					vip.AddConfigPath(exe)
+				case "$HOME":
 					home, err := homedir.Dir()
 					if err != nil {
 						return err
 					}
 					vip.AddConfigPath(home)
-				} else {
+				default:
 					vip.AddConfigPath(dir)
 				}
 			}
