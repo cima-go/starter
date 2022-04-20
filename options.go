@@ -15,7 +15,7 @@ func WithConfigSearch(name string, dirs ...string) Option {
 			for _, dir := range dirs {
 				switch dir {
 				case "$EXE":
-					exe, err := osext.Executable()
+					exe, err := osext.ExecutableFolder()
 					if err != nil {
 						return err
 					}
