@@ -4,6 +4,8 @@ go 1.17
 
 require (
 	github.com/fsnotify/fsnotify v1.5.1
+	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
+	github.com/kardianos/service v1.2.1
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/sevlyar/go-daemon v0.1.5
 	github.com/spf13/cobra v1.4.0
@@ -14,7 +16,6 @@ require (
 require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
-	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect

@@ -6,6 +6,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func ServiceCommands(s *Starter) []*cobra.Command {
+	install := &cobra.Command{
+		Use:   "install",
+		Short: fmt.Sprintf("install service of %s", s.AppName()),
+		RunE:  s.cmdInstall,
+	}
+	uninstall := &cobra.Command{
+		Use:   "uninstall",
+		Short: fmt.Sprintf("uninstall service of %s", s.AppName()),
+		RunE:  s.cmdUnInstall,
+	}
+	return []*cobra.Command{install, uninstall}
+}
+
 func StdCommands(s *Starter) []*cobra.Command {
 	serve := &cobra.Command{
 		Use:   "serve",
@@ -35,5 +49,5 @@ func StdCommands(s *Starter) []*cobra.Command {
 		AddFlags(cmd, flags)
 	}
 
-	return mixed
+	return append(mixed, ServiceCommands(s)...)
 }

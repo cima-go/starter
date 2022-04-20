@@ -3,10 +3,13 @@ package starter
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/kardianos/osext"
+	"github.com/kardianos/service"
 	"github.com/spf13/cobra"
 )
 
@@ -63,4 +66,75 @@ func (s *Starter) cmdStop(cmd *cobra.Command, args []string) error {
 
 func (s *Starter) cmdReload(cmd *cobra.Command, args []string) error {
 	return newDaemon(s.getFlags().Pid(cmd), "").reload()
+}
+
+func (s *Starter) cmdInstall(cmd *cobra.Command, args []string) error {
+	wd, err := osext.ExecutableFolder()
+	if err != nil {
+		return fmt.Errorf("get executable folder: %s", err)
+	}
+
+	name := cmd.Flag("name").Value.String()
+	if name == "" {
+		name = s.name
+	}
+
+	prg := &program{}
+	svcConfig := &service.Config{
+		Name:             name,
+		DisplayName:      name,
+		Description:      name,
+		WorkingDirectory: wd,
+	}
+
+	if len(args) > 0 {
+		svcConfig.Arguments = args
+	} else {
+		svcConfig.Arguments = []string{"serve"}
+	}
+
+	svc, err := service.New(prg, svcConfig)
+	if err != nil {
+		return fmt.Errorf("create service: %s", err)
+	}
+
+	if err := svc.Install(); err != nil {
+		return fmt.Errorf("install service: %s", err)
+	}
+
+	if err := svc.Start(); err != nil {
+		return fmt.Errorf("start service: %s", err)
+	}
+
+	return nil
+}
+
+func (s *Starter) cmdUnInstall(cmd *cobra.Command, args []string) error {
+	name := cmd.Flag("name").Value.String()
+	if name == "" {
+		name = s.name
+	}
+
+	prg := &program{}
+	svcConfig := &service.Config{
+		Name:        name,
+		DisplayName: s.name,
+		Description: s.name,
+	}
+
+	svc, err := service.New(prg, svcConfig)
+	if err != nil {
+		return fmt.Errorf("create service: %s", err)
+	}
+
+	if st, err := svc.Status(); err == nil && st == service.StatusRunning {
+		if err := svc.Stop(); err != nil {
+			log.Printf("stop service:%s", err)
+		}
+	}
+
+	if err := svc.Uninstall(); err != nil {
+		return fmt.Errorf("uninstall service:%s", err)
+	}
+	return nil
 }
