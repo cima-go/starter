@@ -14,7 +14,7 @@ func WithConfigSearch(name string, dirs ...string) Option {
 			vip.SetConfigName(name)
 			for _, dir := range dirs {
 				switch dir {
-				case "$EXE":
+				case ".":
 					exe, err := osext.ExecutableFolder()
 					if err != nil {
 						return err

@@ -2,6 +2,7 @@ package starter
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"syscall"
@@ -72,6 +73,10 @@ func (s *Starter) initConf(confFile string, watchConf bool, signals chan<- os.Si
 }
 
 func (s *Starter) runApp(signal <-chan os.Signal) (os.Signal, error) {
+	if s.app == nil {
+		return nil, errors.New("missing app builder")
+	}
+
 	app := s.app(s.confValue)
 
 	startCtx, cancel1 := context.WithTimeout(context.Background(), app.StartTimeout())
